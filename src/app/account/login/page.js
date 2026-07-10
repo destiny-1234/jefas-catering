@@ -172,15 +172,15 @@ export default function CustomerLogin() {
                   We sent a 8-digit code to {resetEmail}. Enter it below with your new password.
                 </p>
                 <form onSubmit={handleVerifyAndReset} className="grid gap-5">
-                  <input
-                    type="text"
-                    required
-                    maxLength={8}
-                    placeholder="8-digit code"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                    className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-center text-xl tracking-widest"
-                  />
+                 <input
+  type="text"
+  required
+  maxLength={8}
+  placeholder="Enter the code from your email"
+  value={code}
+  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+  className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-center text-xl tracking-widest"
+/>
                   <input
                     type="password"
                     required
