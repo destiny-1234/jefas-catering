@@ -169,7 +169,7 @@ export default function CustomerLogin() {
                   Enter Verification Code
                 </h1>
                 <p className="text-gray-500 text-center mb-8 text-sm">
-                  We sent a 6-digit code to {resetEmail}. Enter it below with your new password.
+                  We sent a 8-digit code to {resetEmail}. Enter it below with your new password.
                 </p>
                 <form onSubmit={handleVerifyAndReset} className="grid gap-5">
                   <input
