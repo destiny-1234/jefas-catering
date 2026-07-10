@@ -12,11 +12,14 @@ export default function AdminLogin() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const [showForgot, setShowForgot] = useState(false)
+  const [forgotStep, setForgotStep] = useState(null) // null | 'request' | 'verify'
   const [resetEmail, setResetEmail] = useState('')
-  const [resetSent, setResetSent] = useState(false)
+  const [code, setCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [resetLoading, setResetLoading] = useState(false)
   const [resetError, setResetError] = useState(null)
+  const [resetSuccess, setResetSuccess] = useState(false)
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -41,7 +44,7 @@ export default function AdminLogin() {
     router.push('/admin')
   }
 
-  const handleForgotPassword = async (e) => {
+  const handleRequestCode = async (e) => {
     e.preventDefault()
     setResetLoading(true)
     setResetError(null)
@@ -52,63 +55,160 @@ export default function AdminLogin() {
       return
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail)
 
     if (error) {
       setResetError('Something went wrong. Please try again.')
-    } else {
-      setResetSent(true)
+      setResetLoading(false)
+      return
     }
+
+    setForgotStep('verify')
     setResetLoading(false)
   }
 
-  if (showForgot) {
+  const handleVerifyAndReset = async (e) => {
+    e.preventDefault()
+    setResetError(null)
+
+    if (newPassword.length < 6) {
+      setResetError('Password must be at least 6 characters.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setResetError('Passwords do not match.')
+      return
+    }
+
+    setResetLoading(true)
+
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email: resetEmail,
+      token: code,
+      type: 'recovery',
+    })
+
+    if (verifyError) {
+      setResetError('Invalid or expired code. Please request a new one.')
+      setResetLoading(false)
+      return
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+
+    if (updateError) {
+      setResetError(updateError.message)
+      setResetLoading(false)
+      return
+    }
+
+    setResetSuccess(true)
+    setResetLoading(false)
+    setTimeout(() => {
+      setForgotStep(null)
+      setResetSuccess(false)
+      setResetEmail('')
+      setCode('')
+      setNewPassword('')
+      setConfirmPassword('')
+    }, 2500)
+  }
+
+  if (forgotStep) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-6 py-16">
         <div className="max-w-md w-full bg-gray-50 rounded-3xl p-8">
-          <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">
-            Reset Password
-          </h1>
-          <p className="text-gray-500 text-center mb-8 text-sm">
-            Enter your admin email and we&apos;ll send you a reset link.
-          </p>
-
-          {resetSent ? (
-            <div className="text-center py-6">
-              <div className="text-4xl mb-4">📧</div>
-              <p className="text-gray-700 font-medium">Check your email!</p>
-              <p className="text-gray-500 text-sm mt-1">
-                We&apos;ve sent a password reset link to {resetEmail}.
+          {forgotStep === 'request' && (
+            <>
+              <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">
+                Reset Password
+              </h1>
+              <p className="text-gray-500 text-center mb-8 text-sm">
+                Enter your admin email and we&apos;ll send you a verification code.
               </p>
-            </div>
-          ) : (
-            <form onSubmit={handleForgotPassword} className="grid gap-5">
-              <input
-                type="email"
-                required
-                placeholder="Your admin email"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-              {resetError && <p className="text-red-600 text-sm">{resetError}</p>}
-              <button
-                type="submit"
-                disabled={resetLoading}
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60"
-              >
-                {resetLoading ? 'Sending...' : 'Send Reset Link'}
-              </button>
-            </form>
+              <form onSubmit={handleRequestCode} className="grid gap-5">
+                <input
+                  type="email"
+                  required
+                  placeholder="Your admin email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+                {resetError && <p className="text-red-600 text-sm">{resetError}</p>}
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60"
+                >
+                  {resetLoading ? 'Sending...' : 'Send Code'}
+                </button>
+              </form>
+            </>
+          )}
+
+          {forgotStep === 'verify' && (
+            resetSuccess ? (
+              <div className="text-center py-6">
+                <div className="text-4xl mb-4">✅</div>
+                <p className="text-gray-700 font-medium">Password updated successfully!</p>
+                <p className="text-gray-500 text-sm mt-1">You can now log in with your new password.</p>
+              </div>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">
+                  Enter Verification Code
+                </h1>
+                <p className="text-gray-500 text-center mb-8 text-sm">
+                  We sent a 6-digit code to {resetEmail}. Enter it below with your new password.
+                </p>
+                <form onSubmit={handleVerifyAndReset} className="grid gap-5">
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    placeholder="6-digit code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                    className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-center text-xl tracking-widest"
+                  />
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    placeholder="New password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                  <input
+                    type="password"
+                    required
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+
+                  {resetError && <p className="text-red-600 text-sm">{resetError}</p>}
+
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-60"
+                  >
+                    {resetLoading ? 'Updating...' : 'Reset Password'}
+                  </button>
+                </form>
+              </>
+            )
           )}
 
           <button
             onClick={() => {
-              setShowForgot(false)
-              setResetSent(false)
+              setForgotStep(null)
               setResetError(null)
+              setResetSuccess(false)
             }}
             className="w-full text-center text-sm text-gray-500 hover:text-gray-700 mt-6"
           >
@@ -159,7 +259,7 @@ export default function AdminLogin() {
         </form>
 
         <button
-          onClick={() => setShowForgot(true)}
+          onClick={() => setForgotStep('request')}
           className="w-full text-center text-sm text-red-600 hover:underline mt-4"
         >
           Forgot password?
