@@ -28,12 +28,10 @@ export default function CheckoutPage() {
         email: data.user.email || '',
         name: data.user.user_metadata?.full_name || '',
       }))
-
       const savedDelivery = sessionStorage.getItem('jefas_checkout_delivery')
       if (savedDelivery) {
         setDelivery(JSON.parse(savedDelivery))
       }
-
       setChecking(false)
     }
     init()
@@ -48,7 +46,6 @@ export default function CheckoutPage() {
   const handlePayment = (e) => {
     e.preventDefault()
     setError(null)
-
     if (!form.name || !form.phone || !form.email) {
       setError('Please fill in all your details.')
       return
@@ -57,11 +54,8 @@ export default function CheckoutPage() {
       setError('Payment system is still loading. Please wait a moment and try again.')
       return
     }
-
     setProcessing(true)
-
     const reference = `jefas-${Date.now()}`
-
     const handler = window.PaystackPop.setup({
       key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
       email: form.email,
@@ -81,8 +75,26 @@ export default function CheckoutPage() {
         setProcessing(false)
       },
     })
-
     handler.openIframe()
+  }
+
+  // Loop through cart items and call atomic DB decrement functions
+  const decrementInventory = async (cartItems) => {
+    for (const item of cartItems) {
+      if (item.type === 'cake') {
+        const { error } = await supabase.rpc('decrement_cake_stock', {
+          cake_id: item.id,
+          qty: item.quantity,
+        })
+        if (error) console.error(`Inventory error for cake ${item.id}:`, error)
+      } else {
+        const { error } = await supabase.rpc('decrement_product_stock', {
+          product_id: item.id,
+          qty: item.quantity,
+        })
+        if (error) console.error(`Inventory error for product ${item.id}:`, error)
+      }
+    }
   }
 
   const verifyAndSaveOrder = async (reference) => {
@@ -93,7 +105,6 @@ export default function CheckoutPage() {
         body: JSON.stringify({ reference, expectedAmount: grandTotal }),
       })
       const result = await res.json()
-
       if (!res.ok || !result.verified) {
         setError('Payment verification failed. If you were charged, please contact us on WhatsApp.')
         setProcessing(false)
@@ -125,6 +136,9 @@ export default function CheckoutPage() {
         setProcessing(false)
         return
       }
+
+      // Decrement inventory stock on successful order placement
+      await decrementInventory(cart)
 
       clearCart()
       sessionStorage.removeItem('jefas_checkout_delivery')
@@ -162,7 +176,6 @@ export default function CheckoutPage() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-16">
       <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-10">Checkout</h1>
-
       <div className="grid md:grid-cols-2 gap-10">
         {/* Customer Details */}
         <div>
@@ -195,9 +208,7 @@ export default function CheckoutPage() {
               onChange={handleChange}
               className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
             />
-
             {error && <p className="text-red-600 text-sm">{error}</p>}
-
             <button
               type="submit"
               disabled={processing}
@@ -214,7 +225,9 @@ export default function CheckoutPage() {
           <div className="space-y-3 mb-4">
             {cart.map((item) => (
               <div key={item.id} className="flex justify-between text-sm text-gray-600">
-                <span>{item.name} × {item.quantity}</span>
+                <span>
+                  {item.name} × {item.quantity}
+                </span>
                 <span>₦{(item.price * item.quantity).toLocaleString()}</span>
               </div>
             ))}
