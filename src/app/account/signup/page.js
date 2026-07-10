@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 
+const ADMIN_EMAIL = 'jefascatering27@gmail.com'
+
 export default function CustomerSignup() {
   const router = useRouter()
   const [name, setName] = useState('')
@@ -16,6 +18,12 @@ export default function CustomerSignup() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    if (email.trim().toLowerCase() === ADMIN_EMAIL) {
+      setError('This email is reserved and cannot be used to create a customer account.')
+      setLoading(false)
+      return
+    }
 
     const { error } = await supabase.auth.signUp({
       email,
