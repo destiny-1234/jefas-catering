@@ -19,7 +19,7 @@ export default function AboutPage() {
       <section className="max-w-5xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-12 items-center">
         <div className="relative w-full h-80 bg-gray-100 rounded-2xl overflow-hidden">
           <Image
-            src="/jefas-founder.jpg"
+            src="/jefas-founder1.jpg"
             alt="Jefas Catering and Events founder"
             fill
             className="object-cover"
