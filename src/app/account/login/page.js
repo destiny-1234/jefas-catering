@@ -175,8 +175,8 @@ export default function CustomerLogin() {
                   <input
                     type="text"
                     required
-                    maxLength={6}
-                    placeholder="6-digit code"
+                    maxLength={8}
+                    placeholder="8-digit code"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                     className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-center text-xl tracking-widest"
