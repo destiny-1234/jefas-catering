@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../../lib/supabaseClient'
 
+const ADMIN_EMAIL = 'jefascatering27@gmail.com'
+
 export default function AdminLogin() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -21,20 +23,34 @@ export default function AdminLogin() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError('Invalid email or password.')
       setLoading(false)
-    } else {
-      router.push('/admin')
+      return
     }
+
+    if (data.user?.email?.toLowerCase() !== ADMIN_EMAIL) {
+      await supabase.auth.signOut()
+      setError('This account does not have admin access.')
+      setLoading(false)
+      return
+    }
+
+    router.push('/admin')
   }
 
   const handleForgotPassword = async (e) => {
     e.preventDefault()
     setResetLoading(true)
     setResetError(null)
+
+    if (resetEmail.trim().toLowerCase() !== ADMIN_EMAIL) {
+      setResetError('This is not the registered admin email.')
+      setResetLoading(false)
+      return
+    }
 
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
