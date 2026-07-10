@@ -9,7 +9,6 @@ export default function CakesPage() {
   const [cakes, setCakes] = useState([])
   const [loading, setLoading] = useState(true)
   const [addedId, setAddedId] = useState(null)
-
   const [form, setForm] = useState({
     customer_name: '',
     customer_phone: '',
@@ -36,7 +35,8 @@ export default function CakesPage() {
   }, [])
 
   const handleAddToCart = (cake) => {
-    addToCart(cake, 1)
+    // Explicitly pass the item data and the type 'cake' to match the context logic
+    addToCart(cake, 'cake')
     setAddedId(cake.id)
     setTimeout(() => setAddedId(null), 1500)
   }
@@ -49,9 +49,7 @@ export default function CakesPage() {
     e.preventDefault()
     setSubmitting(true)
     setError(null)
-
     const { error } = await supabase.from('cake_orders').insert([form])
-
     if (error) {
       setError('Something went wrong. Please try again or WhatsApp us directly.')
       console.error(error)
@@ -109,17 +107,32 @@ export default function CakesPage() {
         ) : (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8">
             {cakes.map((cake) => {
+              const outOfStock = Number(cake.stock) <= 0
               const justAdded = addedId === cake.id
               return (
                 <div
                   key={cake.id}
-                  className="group border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:border-red-200 transition"
+                  className={`group border rounded-2xl overflow-hidden transition ${
+                    outOfStock
+                      ? 'border-gray-200 opacity-60'
+                      : 'border-gray-200 hover:shadow-xl hover:border-red-200'
+                  }`}
                 >
                   <div className="relative bg-gray-50 h-48 flex items-center justify-center">
                     {cake.image_url ? (
-                      <Image src={cake.image_url} alt={cake.name} fill className="object-cover" />
+                      <Image
+                        src={cake.image_url}
+                        alt={cake.name}
+                        fill
+                        className={`object-cover ${outOfStock ? 'grayscale' : ''}`}
+                      />
                     ) : (
                       <span className="text-4xl">🎂</span>
+                    )}
+                    {outOfStock && (
+                      <div className="absolute top-3 left-3 bg-gray-900 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                        Out of Stock
+                      </div>
                     )}
                   </div>
                   <div className="p-5">
@@ -131,14 +144,17 @@ export default function CakesPage() {
                           ₦{Number(cake.price).toLocaleString()}
                         </span>
                         <button
+                          disabled={outOfStock}
                           onClick={() => handleAddToCart(cake)}
                           className={`text-sm px-4 py-2 rounded-full font-medium transition ${
-                            justAdded
+                            outOfStock
+                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                              : justAdded
                               ? 'bg-green-600 text-white'
                               : 'bg-red-600 text-white hover:bg-red-700'
                           }`}
                         >
-                          {justAdded ? 'Added ✓' : 'Add to Cart'}
+                          {outOfStock ? 'Out of Stock' : justAdded ? 'Added ✓' : 'Add to Cart'}
                         </button>
                       </div>
                     ) : (
@@ -163,13 +179,10 @@ export default function CakesPage() {
           <p className="text-gray-500 text-center mb-8">
             Have something specific in mind? Tell us and we&apos;ll get back to you shortly.
           </p>
-
           {submitted ? (
             <div className="text-center py-10">
               <div className="text-4xl mb-4">🎉</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                Request received!
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Request received!</h3>
               <p className="text-gray-500">
                 Thank you — we&apos;ll reach out to confirm details shortly.
               </p>
@@ -233,11 +246,7 @@ export default function CakesPage() {
                 rows={4}
                 className="md:col-span-2 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
               />
-
-              {error && (
-                <p className="md:col-span-2 text-red-600 text-sm">{error}</p>
-              )}
-
+              {error && <p className="md:col-span-2 text-red-600 text-sm">{error}</p>}
               <button
                 type="submit"
                 disabled={submitting}
