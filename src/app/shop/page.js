@@ -19,6 +19,7 @@ export default function ShopPage() {
         .from('products')
         .select('*')
         .order('created_at', { ascending: false })
+
       if (error) {
         console.error('Error fetching products:', error)
       } else {
@@ -29,15 +30,13 @@ export default function ShopPage() {
     fetchProducts()
   }, [])
 
-  const filteredProducts =
-    activeCategory === 'All'
-      ? products
-      : products.filter(
-          (p) => p.category?.toLowerCase() === activeCategory.toLowerCase()
-        )
+  const filteredProducts = activeCategory === 'All' 
+    ? products 
+    : products.filter((p) => p.category?.toLowerCase() === activeCategory.toLowerCase())
 
   const handleAddToCart = (product) => {
-    addToCart(product, 1)
+    // Pass the product data and explicitly define the item type as 'product'
+    addToCart(product, 'product')
     setAddedId(product.id)
     setTimeout(() => setAddedId(null), 1500)
   }
@@ -95,6 +94,7 @@ export default function ShopPage() {
           {filteredProducts.map((product) => {
             const outOfStock = Number(product.stock) <= 0
             const justAdded = addedId === product.id
+
             return (
               <div
                 key={product.id}
@@ -121,6 +121,7 @@ export default function ShopPage() {
                     </div>
                   )}
                 </div>
+
                 <div className="p-5">
                   <p className="text-xs uppercase tracking-wide text-red-600 font-semibold mb-1">
                     {product.category || 'Uncategorized'}
@@ -129,6 +130,7 @@ export default function ShopPage() {
                   <p className="text-gray-500 text-sm mb-4 line-clamp-2">
                     {product.description}
                   </p>
+
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-gray-900">
                       ₦{Number(product.price).toLocaleString()}
