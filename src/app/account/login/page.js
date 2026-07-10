@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '../../../lib/supabaseClient'
 
+const ADMIN_EMAIL = 'jefascatering27@gmail.com'
+
 export default function CustomerLogin() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -22,20 +24,41 @@ export default function CustomerLogin() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (email.trim().toLowerCase() === ADMIN_EMAIL) {
+      setError('This email is reserved for admin use. Please use the Admin Login page instead.')
+      setLoading(false)
+      return
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError('Invalid email or password.')
       setLoading(false)
-    } else {
-      router.push('/account/orders')
+      return
     }
+
+    // Extra safety net: if somehow the admin account got in, sign it back out
+    if (data.user?.email?.toLowerCase() === ADMIN_EMAIL) {
+      await supabase.auth.signOut()
+      setError('This email is reserved for admin use. Please use the Admin Login page instead.')
+      setLoading(false)
+      return
+    }
+
+    router.push('/account/orders')
   }
 
   const handleForgotPassword = async (e) => {
     e.preventDefault()
     setResetLoading(true)
     setResetError(null)
+
+    if (resetEmail.trim().toLowerCase() === ADMIN_EMAIL) {
+      setResetError('This email is reserved for admin use. Please use the Admin Login page instead.')
+      setResetLoading(false)
+      return
+    }
 
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
