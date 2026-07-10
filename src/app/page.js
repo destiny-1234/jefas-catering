@@ -1,65 +1,98 @@
-import Image from "next/image";
+import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
+    <div className="bg-white">
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-b from-red-50 to-white py-24 px-6 text-center overflow-hidden">
+        <div className="max-w-3xl mx-auto">
+         <Image src="/jefas-logo.png" alt="Jefas Catering and Events" width={40} height={40} style={{ height: 'auto' }} />
+          <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-4 tracking-tight">
+            Jefas <span className="text-red-600">Catering & Events</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-lg text-gray-600 max-w-xl mx-auto mb-10">
+            Custom cakes, unforgettable events, and premium baking supplies —
+            crafted with care, delivered with excellence.
           </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link
+              href="/cakes"
+              className="bg-red-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-red-700 transition shadow-md"
+            >
+              Order a Cake
+            </Link>
+            <Link
+              href="/events"
+              className="border-2 border-red-600 text-red-600 px-8 py-3 rounded-full font-semibold hover:bg-red-50 transition"
+            >
+              Plan an Event
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Services Overview */}
+      <section className="py-20 px-6 max-w-6xl mx-auto">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl font-bold text-gray-900">What We Offer</h2>
+          <p className="text-gray-500 mt-2">Everything you need, all in one place</p>
         </div>
-      </main>
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="group border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl hover:border-red-200 transition">
+            <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+              🎂
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-gray-900">Custom Cakes</h3>
+            <p className="text-gray-600 mb-5">
+              Beautifully designed cakes for birthdays, weddings, and every celebration.
+            </p>
+            <Link href="/cakes" className="text-red-600 font-semibold group-hover:underline">
+              View Cakes →
+            </Link>
+          </div>
+          <div className="group border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl hover:border-red-200 transition">
+            <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+              🎉
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-gray-900">Event Planning</h3>
+            <p className="text-gray-600 mb-5">
+              Full-service event planning to make your special day stress-free.
+            </p>
+            <Link href="/events" className="text-red-600 font-semibold group-hover:underline">
+              Explore Events →
+            </Link>
+          </div>
+          <div className="group border border-gray-200 rounded-2xl p-8 text-center hover:shadow-xl hover:border-red-200 transition">
+            <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+              🛒
+            </div>
+            <h3 className="text-xl font-semibold mb-2 text-gray-900">Baking Supplies</h3>
+            <p className="text-gray-600 mb-5">
+              Shop quality flour, sugar, butter, and baking tools online.
+            </p>
+            <Link href="/shop" className="text-red-600 font-semibold group-hover:underline">
+              Visit Shop →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Call To Action */}
+      <section className="bg-red-600 text-white text-center py-16 px-6">
+        <h2 className="text-3xl font-bold mb-4">
+          Ready to make your event unforgettable?
+        </h2>
+        <p className="text-red-100 mb-8 max-w-lg mx-auto">
+          Reach out today and let&apos;s start planning something beautiful together.
+        </p>
+        <Link
+          href="/contact"
+          className="inline-block bg-white text-red-600 px-8 py-3 rounded-full font-semibold hover:bg-red-50 transition shadow-md"
+        >
+          Get in Touch
+        </Link>
+      </section>
     </div>
-  );
+  )
 }
