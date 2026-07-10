@@ -160,14 +160,14 @@ export default function AdminLogin() {
                   Enter Verification Code
                 </h1>
                 <p className="text-gray-500 text-center mb-8 text-sm">
-                  We sent a 6-digit code to {resetEmail}. Enter it below with your new password.
+                  We sent a 8-digit code to {resetEmail}. Enter it below with your new password.
                 </p>
                 <form onSubmit={handleVerifyAndReset} className="grid gap-5">
                   <input
                     type="text"
                     required
-                    maxLength={6}
-                    placeholder="6-digit code"
+                    maxLength={8}
+                    placeholder="8-digit code"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                     className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 text-center text-xl tracking-widest"
