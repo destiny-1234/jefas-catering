@@ -36,78 +36,115 @@ export function CartProvider({ children }) {
       loadCartFor(currentUserId)
     })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const newUserId = session?.user?.id || null
-      if (newUserId !== currentUserId) {
-        currentUserId = newUserId
-        setUserId(newUserId)
-        loadCartFor(newUserId)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const uid = session?.user?.id || null
+      if (uid !== currentUserId) {
+        currentUserId = uid
+        setUserId(uid)
+        loadCartFor(uid)
       }
     })
 
-    return () => listener.subscription.unsubscribe()
+    return () => {
+      subscription?.unsubscribe()
+    }
   }, [])
 
-  // Save cart to the correct key whenever it changes
+  // Save cart to localStorage whenever it changes (only after initial load)
   useEffect(() => {
-    if (loaded) {
-      localStorage.setItem(getCartKey(userId), JSON.stringify(cart))
+    if (!loaded) return
+    try {
+      const key = getCartKey(userId)
+      localStorage.setItem(key, JSON.stringify(cart))
+    } catch (e) {
+      console.error('Failed to save cart:', e)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, loaded, userId])
+  }, [cart, userId, loaded])
 
-  const addToCart = (product, quantity = 1) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id)
-      if (existing) {
-        return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
+  // 1. Add item to cart with stock validation and item type distinction
+  const addToCart = (item, type = 'product') => {
+    setCart((prevCart) => {
+      // Find item matching both ID and type (since a cake and product could theoretically share an ID)
+      const existingItem = prevCart.find((i) => i.id === item.id && i.type === type)
+
+      if (existingItem) {
+        // Enforce stock ceiling limit
+        if (existingItem.quantity >= (item.stock || 0)) {
+          alert(`Sorry, only ${item.stock} available in stock!`)
+          return prevCart
+        }
+        return prevCart.map((i) =>
+          i.id === item.id && i.type === type
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
         )
       }
+
+      // New item validation
+      if ((item.stock || 0) <= 0) {
+        alert('This item is currently out of stock!')
+        return prevCart
+      }
+
+      // Preserve relevant item fields along with quantity, type, and max stock capacity
       return [
-        ...prev,
+        ...prevCart,
         {
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          image_url: product.image_url,
-          quantity,
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          image: item.image || item.image_url,
+          stock: item.stock,
+          type,
+          quantity: 1,
         },
       ]
     })
   }
 
-  const removeFromCart = (id) => {
-    setCart((prev) => prev.filter((item) => item.id !== id))
-  }
-
-  const updateQuantity = (id, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(id)
-      return
-    }
-    setCart((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+  // 2. Modify item quantity while strictly obeying stock constraints
+  const updateQuantity = (id, type, newQuantity) => {
+    setCart((prevCart) =>
+      prevCart.map((item) => {
+        if (item.id === id && item.type === type) {
+          // Enforce 1 as minimum floor and item.stock as maximum ceiling
+          const cappedQuantity = Math.min(Math.max(1, newQuantity), item.stock || 0)
+          
+          if (newQuantity > (item.stock || 0)) {
+            alert(`Sorry, only ${item.stock} items available in stock!`)
+          }
+          
+          return { ...item, quantity: cappedQuantity }
+        }
+        return item
+      })
     )
   }
 
-  const clearCart = () => setCart([])
+  // 3. Remove an item entirely from the cart
+  const removeFromCart = (id, type) => {
+    setCart((prevCart) => prevCart.filter((item) => !(item.id === id && item.type === type)))
+  }
 
-  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  // 4. Clear the whole cart (used after successful checkout)
+  const clearCart = () => {
+    setCart([])
+  }
+
+  // Calculate cart metrics dynamically
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   return (
     <CartContext.Provider
       value={{
         cart,
         addToCart,
-        removeFromCart,
         updateQuantity,
+        removeFromCart,
         clearCart,
-        cartTotal,
         cartCount,
+        cartTotal,
       }}
     >
       {children}
@@ -117,6 +154,8 @@ export function CartProvider({ children }) {
 
 export function useCart() {
   const context = useContext(CartContext)
-  if (!context) throw new Error('useCart must be used within a CartProvider')
+  if (!context) {
+    throw new Error('useCart must be used within a CartProvider')
+  }
   return context
 }
