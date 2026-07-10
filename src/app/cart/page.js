@@ -61,65 +61,79 @@ export default function CartPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-16">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-10">
-        Your Cart
-      </h1>
-
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-10">Your Cart</h1>
       <div className="grid md:grid-cols-3 gap-10">
         {/* Cart Items */}
         <div className="md:col-span-2 space-y-4">
-          {cart.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-4 border border-gray-200 rounded-2xl p-4"
-            >
-              <div className="relative w-20 h-20 bg-gray-50 rounded-xl overflow-hidden shrink-0">
-                {item.image_url ? (
-                  <Image src={item.image_url} alt={item.name} fill className="object-cover" />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-2xl">🧁</div>
-                )}
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">{item.name}</h3>
-                <p className="text-gray-500 text-sm">
-                  ₦{Number(item.price).toLocaleString()} each
-                </p>
-                <div className="flex items-center gap-3 mt-2">
+          {cart.map((item) => {
+            const maxStockReached = item.quantity >= (item.stock || 0)
+
+            return (
+              <div
+                key={`${item.id}-${item.type}`}
+                className="flex items-center gap-4 border border-gray-200 rounded-2xl p-4"
+              >
+                <div className="relative w-20 h-20 bg-gray-50 rounded-xl overflow-hidden shrink-0">
+                  {item.image || item.image_url ? (
+                    <Image
+                      src={item.image || item.image_url}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-2xl">
+                      {item.type === 'cake' ? '🎂' : '🧁'}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                  <p className="text-gray-500 text-sm">
+                    ₦{Number(item.price).toLocaleString()} each
+                  </p>
+                  <div className="flex items-center gap-3 mt-2">
+                    {/* Minus Button */}
+                    <button
+                      onClick={() => updateQuantity(item.id, item.type, item.quantity - 1)}
+                      disabled={item.quantity <= 1}
+                      className="w-7 h-7 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      −
+                    </button>
+                    <span className="w-6 text-center font-medium">{item.quantity}</span>
+                    {/* Plus Button capped at max available stock */}
+                    <button
+                      onClick={() => updateQuantity(item.id, item.type, item.quantity + 1)}
+                      disabled={maxStockReached}
+                      className="w-7 h-7 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      +
+                    </button>
+                    {maxStockReached && (
+                      <span className="text-xs text-red-500 font-medium">Max stock reached</span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-gray-900 mb-2">
+                    ₦{(item.price * item.quantity).toLocaleString()}
+                  </p>
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="w-7 h-7 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
+                    onClick={() => removeFromCart(item.id, item.type)}
+                    className="text-xs text-red-600 hover:underline"
                   >
-                    −
-                  </button>
-                  <span className="w-6 text-center font-medium">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="w-7 h-7 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
-                  >
-                    +
+                    Remove
                   </button>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-bold text-gray-900 mb-2">
-                  ₦{(item.price * item.quantity).toLocaleString()}
-                </p>
-                <button
-                  onClick={() => removeFromCart(item.id)}
-                  className="text-xs text-red-600 hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Order Summary */}
         <div className="bg-gray-50 rounded-2xl p-6 h-fit">
           <h2 className="font-semibold text-gray-900 mb-5">Order Summary</h2>
-
           <div className="mb-5">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Delivery Zone
@@ -135,12 +149,12 @@ export default function CartPage() {
               </option>
               {zones.map((zone) => (
                 <option key={zone.id} value={zone.id}>
-                  {zone.name} {zone.fee === 0 ? '(Free)' : `— ₦${Number(zone.fee).toLocaleString()}`}
+                  {zone.name}{' '}
+                  {zone.fee === 0 ? '(Free)' : `— ₦${Number(zone.fee).toLocaleString()}`}
                 </option>
               ))}
             </select>
           </div>
-
           <div className="space-y-3 text-sm border-t border-gray-200 pt-4">
             <div className="flex justify-between text-gray-600">
               <span>Subtotal</span>
@@ -155,7 +169,6 @@ export default function CartPage() {
               <span>₦{grandTotal.toLocaleString()}</span>
             </div>
           </div>
-
           <button
             onClick={handleCheckout}
             className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-xl transition"
