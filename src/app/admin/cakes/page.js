@@ -11,6 +11,7 @@ const emptyForm = {
   price: '',
   image_url: '',
   flavor: '',
+  stock: '0', // Added stock to base state
 }
 
 export default function AdminCakes() {
@@ -54,7 +55,6 @@ export default function AdminCakes() {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-
     setUploading(true)
     setError(null)
 
@@ -90,6 +90,7 @@ export default function AdminCakes() {
     const payload = {
       ...form,
       price: form.price ? Number(form.price) : null,
+      stock: form.stock ? Number(form.stock) : 0, // Enforce number format for stock
     }
 
     let result
@@ -116,6 +117,7 @@ export default function AdminCakes() {
       price: cake.price || '',
       image_url: cake.image_url || '',
       flavor: cake.flavor || '',
+      stock: cake.stock !== undefined && cake.stock !== null ? String(cake.stock) : '0',
     })
     setEditingId(cake.id)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -141,9 +143,7 @@ export default function AdminCakes() {
         <Link href="/admin" className="text-sm text-red-600 hover:underline">
           ← Back to Dashboard
         </Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mt-2">
-          Cake Gallery
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mt-2">Cake Gallery</h1>
       </div>
 
       {/* Form */}
@@ -175,14 +175,23 @@ export default function AdminCakes() {
             placeholder="Starting Price (₦, optional)"
             value={form.price}
             onChange={handleChange}
-            className="md:col-span-2 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+          {/* New Stock Input Field */}
+          <input
+            type="number"
+            name="stock"
+            required
+            min="0"
+            placeholder="Available Stock Quantity"
+            value={form.stock}
+            onChange={handleChange}
+            className="px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
           />
 
           {/* Image Upload */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Cake Photo
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Cake Photo</label>
             <div className="flex items-center gap-4">
               {form.image_url && (
                 <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200 shrink-0">
@@ -235,54 +244,71 @@ export default function AdminCakes() {
       </div>
 
       {/* Cakes List */}
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">
-        All Cakes ({cakes.length})
-      </h2>
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">All Cakes ({cakes.length})</h2>
       {loading ? (
         <p className="text-gray-500">Loading...</p>
       ) : cakes.length === 0 ? (
         <p className="text-gray-500">No cakes added yet.</p>
       ) : (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {cakes.map((cake) => (
-            <div key={cake.id} className="border border-gray-200 rounded-2xl overflow-hidden">
-              <div className="relative bg-gray-50 h-40">
-                {cake.image_url ? (
-                  <Image src={cake.image_url} alt={cake.name} fill className="object-cover" />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-3xl">🎂</div>
-                )}
-              </div>
-              <div className="p-5">
-                <h3 className="font-semibold text-gray-900 mb-1">{cake.name}</h3>
-                {cake.flavor && (
-                  <p className="text-xs uppercase tracking-wide text-red-600 font-semibold mb-1">
-                    {cake.flavor}
-                  </p>
-                )}
-                <p className="text-gray-500 text-sm mb-2 line-clamp-2">{cake.description}</p>
-                {cake.price && (
-                  <p className="font-bold text-gray-900 mb-4">
-                    ₦{Number(cake.price).toLocaleString()}
-                  </p>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEdit(cake)}
-                    className="flex-1 text-sm border border-gray-300 hover:bg-gray-100 rounded-lg py-2 transition"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(cake.id)}
-                    className="flex-1 text-sm border border-red-200 text-red-600 hover:bg-red-50 rounded-lg py-2 transition"
-                  >
-                    Delete
-                  </button>
+          {cakes.map((cake) => {
+            const outOfStock = Number(cake.stock) <= 0
+            return (
+              <div key={cake.id} className="border border-gray-200 rounded-2xl overflow-hidden flex flex-col justify-between">
+                <div>
+                  <div className="relative bg-gray-50 h-40">
+                    {cake.image_url ? (
+                      <Image src={cake.image_url} alt={cake.name} fill className="object-cover" />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-3xl">🎂</div>
+                    )}
+                    {outOfStock && (
+                      <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+                        Out of Stock
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-semibold text-gray-900 mb-1">{cake.name}</h3>
+                    {cake.flavor && (
+                      <p className="text-xs uppercase tracking-wide text-red-600 font-semibold mb-1">
+                        {cake.flavor}
+                      </p>
+                    )}
+                    <p className="text-gray-500 text-sm mb-2 line-clamp-2">{cake.description}</p>
+                    <div className="flex justify-between items-center mb-4">
+                      {cake.price ? (
+                        <p className="font-bold text-gray-900">
+                          ₦{Number(cake.price).toLocaleString()}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic">No price</p>
+                      )}
+                      <span className={`text-xs px-2 py-1 rounded font-medium ${outOfStock ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                        Stock: {cake.stock || 0}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-5 pt-0">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(cake)}
+                      className="flex-1 text-sm border border-gray-300 hover:bg-gray-100 rounded-lg py-2 transition"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(cake.id)}
+                      className="flex-1 text-sm border border-red-200 text-red-600 hover:bg-red-50 rounded-lg py-2 transition"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
