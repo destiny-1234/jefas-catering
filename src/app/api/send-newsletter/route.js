@@ -28,23 +28,30 @@ export async function POST(request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { subject, message } = await request.json()
+  const { subject, message, recipients } = await request.json()
 
   if (!subject || !message) {
     return Response.json({ error: 'Subject and message are required' }, { status: 400 })
   }
+  if (!Array.isArray(recipients) || recipients.length === 0) {
+    return Response.json({ error: 'No recipients selected' }, { status: 400 })
+  }
 
+  // Validate the requested recipients are actual subscribers (defense against arbitrary email injection)
   const supabaseAdmin = createClient(supabaseUrl, serviceKey)
-  const { data: subscribers, error: fetchError } = await supabaseAdmin
+  const { data: validSubs, error: fetchError } = await supabaseAdmin
     .from('newsletter_subscribers')
     .select('email')
+    .in('email', recipients)
 
   if (fetchError) {
     return Response.json({ error: fetchError.message }, { status: 500 })
   }
 
-  if (!subscribers || subscribers.length === 0) {
-    return Response.json({ error: 'No subscribers to send to' }, { status: 400 })
+  const validEmails = validSubs.map((s) => s.email)
+
+  if (validEmails.length === 0) {
+    return Response.json({ error: 'No valid subscribers in the selected list' }, { status: 400 })
   }
 
   const html = `
@@ -60,7 +67,7 @@ export async function POST(request) {
   let sentCount = 0
   let failedCount = 0
 
-  for (const sub of subscribers) {
+  for (const email of validEmails) {
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -70,7 +77,7 @@ export async function POST(request) {
         },
         body: JSON.stringify({
           from: FROM_ADDRESS,
-          to: [sub.email],
+          to: [email],
           subject,
           html,
         }),
@@ -80,13 +87,13 @@ export async function POST(request) {
         sentCount += 1
       } else {
         failedCount += 1
-        console.error('Failed to send to', sub.email, await res.text())
+        console.error('Failed to send to', email, await res.text())
       }
     } catch (err) {
       failedCount += 1
-      console.error('Error sending to', sub.email, err)
+      console.error('Error sending to', email, err)
     }
   }
 
-  return Response.json({ sentCount, failedCount, total: subscribers.length })
+  return Response.json({ sentCount, failedCount, total: validEmails.length })
 }
