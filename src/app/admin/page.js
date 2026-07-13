@@ -46,6 +46,7 @@ export default function AdminDashboard() {
     { href: '/admin/delivery-zones', icon: '🚚', title: 'Delivery Zones', desc: 'Set delivery fees by area' },
     { href: '/admin/shop-orders', icon: '🛒', title: 'Shop Orders', desc: 'View and manage customer purchases' },
 { href: '/admin/transactions', icon: '💰', title: 'Transactions', desc: 'Revenue by day, week, month, year' },
+  { href: '/admin/newsletter', icon: '📧', title: 'Newsletter', desc: 'Message all subscribers' },
   ]
 
   return (
